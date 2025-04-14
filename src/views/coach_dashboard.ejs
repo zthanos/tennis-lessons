@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Coach Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="/output.css">
+</head>
+<body class="bg-gray-100">
+  <nav class="bg-blue-500 text-white p-4 mb-6">
+    <div class="container mx-auto flex flex-wrap justify-between items-center">
+      <a href="/" class="text-xl font-bold">Tennis Academy</a>
+      <div class="relative flex items-center mt-4 sm:mt-0">
+        <span class="mr-2"><%= coachName %></span>
+        <img src="/images/tennis-racket.png" alt="Profile" class="w-8 h-8 cursor-pointer" onclick="toggleContextMenu()">
+        <div id="contextMenu" class="hidden absolute right-0 mt-2 w-48 bg-white border rounded shadow-lg">
+          <a href="/profile?token=<%= token %>" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">View Profile</a>
+          <a href="/logout" class="block px-4 py-2 text-gray-800 hover:bg-gray-200">Sign Out</a>
+        </div>
+      </div>
+    </div>
+  </nav>
+
+  <div class="container mx-auto p-4">
+    <h1 class="text-3xl font-bold text-center mb-6">Coach Dashboard</h1>
+
+    <div class="bg-white p-6 rounded shadow mb-6">
+      <h2 class="text-xl font-bold mb-4">Active Subscriptions</h2>
+      <% if (subscriptions.length > 0) { %>
+        <ul>
+          <% subscriptions.forEach(subscription => { %>
+            <li class="mb-4">
+              <div class="flex flex-wrap justify-between items-center">
+                <div class="w-full sm:w-auto">
+                  <div class="font-bold">Subscription ID: <%= subscription.id %></div>
+                  <div>Start Date: <%= subscription.start_date %></div>
+                  <div>End Date: <%= subscription.end_date || 'Ongoing' %></div>
+                  <div>Remaining Sessions: <%= subscription.remaining_sessions %></div>
+                </div>
+                <button onclick="openSessionPopup(<%= subscription.id %>)" class="bg-blue-500 text-white px-4 py-2 rounded mt-4 sm:mt-0">Add Session</button>
+              </div>
+              <div class="mt-4">
+                <strong>Students:</strong>
+                <% if (subscription.students.length > 0) { %>
+                  <div class="overflow-x-auto mt-4">
+                    <div class="overflow-x-auto">
+                      <table class="table-auto w-full border-collapse border border-gray-300">
+                        <thead class="bg-gray-100">
+                          <tr>
+                            <th class="border border-gray-300 px-4 py-2 sticky left-0 bg-gray-100">Name</th>
+                            <% lessons.sort((a, b) => new Date(a.date) - new Date(b.date)).forEach(lesson => { %>
+                              <th class="border border-gray-300 px-4 py-2"><%= new Date(lesson.date).toLocaleDateString() %></th>
+                            <% }) %>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <% subscription.students.forEach(student => { %>
+                            <tr class="odd:bg-white even:bg-gray-50">
+                              <td class="border border-gray-300 px-4 py-2 sticky left-0 bg-white"><%= student.name %></td>
+                              <% lessons.forEach(lesson => { %>
+                                <td class="border border-gray-300 px-4 py-2 text-center">
+                                  <% if (lesson.attendance.includes(student.id)) { %>
+                                    <span class="text-green-500 font-bold">✔</span>
+                                  <% } else { %>
+                                    <span class="text-red-500 font-bold">✘</span>
+                                  <% } %>
+                                </td>
+                              <% }) %>
+                            </tr>
+                          <% }) %>
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                <% } else { %>
+                  <p>No students assigned to this subscription.</p>
+                <% } %>
+              </div>
+            </li>
+          <% }) %>
+        </ul>
+      <% } else { %>
+        <p>No active subscriptions found.</p>
+      <% } %>
+    </div>
+
+    <!-- Button to Open Popup -->
+    <div class="mb-6">
+      <button onclick="togglePopup(true)" class="bg-blue-500 text-white px-4 py-2 rounded">Add New Subscription</button>
+    </div>
+
+    <!-- Add New Subscription Popup -->
+    <div id="subscriptionPopup" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+      <div class="bg-white p-6 rounded shadow w-full sm:w-1/2">
+        <h2 class="text-xl font-bold mb-4">Add New Subscription</h2>
+        <form action="/subscribe" method="POST">
+          <div class="mb-4">
+            <label for="userIds" class="block text-sm font-medium">Select Students</label>
+            <select id="userIds" name="userIds" class="w-full border rounded p-2" multiple required>
+              <% allStudents.forEach(student => { %>
+                <option value="<%= student.id %>"><%= student.name %></option>
+              <% }) %>
+            </select>
+          </div>
+          <div class="mb-4">
+            <label for="startDate" class="block text-sm font-medium">Start Date</label>
+            <input type="date" id="startDate" name="startDate" class="w-full border rounded p-2" required>
+          </div>
+          <div class="flex justify-end">
+            <button type="button" onclick="togglePopup(false)" class="bg-gray-500 text-white px-4 py-2 rounded mr-2">Cancel</button>
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Add Subscription</button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <!-- Add Session Popup -->
+    <div id="sessionPopup" class="hidden fixed inset-0 bg-gray-800 bg-opacity-50 flex items-center justify-center">
+      <div class="bg-white p-6 rounded shadow w-full sm:w-1/2">
+        <h2 class="text-xl font-bold mb-4">Add Session</h2>
+        <form action="/lessons" method="POST">
+          <input type="hidden" id="subscriptionId" name="subscriptionId">
+          <div class="mb-4">
+            <label for="sessionDate" class="block text-sm font-medium">Session Date</label>
+            <input type="date" id="sessionDate" name="date" class="w-full border rounded p-2" required>
+          </div>
+          <div class="mb-4">
+            <label class="block text-sm font-medium">Select Students</label>
+            <div id="studentsCheckboxes"></div>
+          </div>
+          <div class="flex justify-end">
+            <button type="button" onclick="closeSessionPopup()" class="bg-gray-500 text-white px-4 py-2 rounded mr-2">Cancel</button>
+            <button type="submit" class="bg-green-500 text-white px-4 py-2 rounded">Save Session</button>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    function togglePopup(show) {
+      const popup = document.getElementById('subscriptionPopup');
+      popup.classList.toggle('hidden', !show);
+    }
+
+    function openSessionPopup(subscriptionId) {
+      document.getElementById('subscriptionId').value = subscriptionId;
+      const subscription = <%- JSON.stringify(subscriptions) %>.find(sub => sub.id === subscriptionId);
+      const studentsCheckboxes = document.getElementById('studentsCheckboxes');
+      studentsCheckboxes.innerHTML = subscription.students.map(student => `
+        <div>
+          <label>
+            <input type="checkbox" name="studentIds" value="${student.id}"> ${student.name}
+          </label>
+        </div>
+      `).join('');
+      document.getElementById('sessionPopup').classList.remove('hidden');
+    }
+
+    function closeSessionPopup() {
+      document.getElementById('sessionPopup').classList.add('hidden');
+    }
+
+    function toggleContextMenu() {
+      const menu = document.getElementById('contextMenu');
+      menu.classList.toggle('hidden');
+    }
+  </script>
+</body>
+</html>

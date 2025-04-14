@@ -1,0 +1,29 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Custom color palette */
+:root {
+  --primary-color: #4CAF50;
+  --secondary-color: #FF9800;
+  --background-color: #F5F5F5;
+  --text-color: #333333;
+}
+
+body {
+  background-color: var(--background-color);
+  color: var(--text-color);
+}
+
+button {
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+}
+
+button:hover {
+  background-color: var(--secondary-color);
+}
