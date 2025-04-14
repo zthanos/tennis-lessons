@@ -1,0 +1,20 @@
+# render.yaml for Tennis Lessons Manager
+services:
+  - type: web
+    name: tennis-lessons
+    runtime: node
+    buildCommand: npm install
+    startCommand: node src/server.js
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: SQLITE_DB_PATH
+        value: /opt/render/project/src/data/tennis_academy.db
+    # SQLite database file will persist in this directory
+    disk:
+      name: sqlite_data
+      mountPath: /opt/render/project/src/data
+      sizeGB: 1
+    env: node
+    autoDeploy: true
+    plan: free
